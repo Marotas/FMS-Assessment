@@ -25,4 +25,6 @@ pip install -r requirements.txt
 ## 4. Run the Code
 
 You can now run the Code
-It is possible that you need to change the index in the Variable cap to make sure it uses the right camera input.
+It is possible that you need to change the index in the Variable cap = cv2.VideoCapture(0) to make sure it uses the right camera input. 
+
+This depends on how many cameras are connected to your device. 0 should be the standard for most systems, but it can differ.
