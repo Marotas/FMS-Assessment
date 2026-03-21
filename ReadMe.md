@@ -14,7 +14,9 @@ in VS Code press CTRL + Shift + P:
     
 Open a new Terminal
 
-Make sure you are in your virtual Environment, you can see this if there is a (.venv) at the beginning of the Command Line type:
+Make sure you are in your virtual Environment, you can see this if there is a (.venv) at the beginning of the Command Line. VS Code should automatically change to the venv the first time you open a new terminal.
+
+Type:
 
 ```
 pip install -r requirements.txt
