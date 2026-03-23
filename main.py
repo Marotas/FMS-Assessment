@@ -47,6 +47,12 @@ try:
             # Left hip angle: shoulder(11), hip(23), knee(25)
             display_angle(landmarks, 11, 23, 25, image, w, h, (0, 255, 255))
 
+            # Right ankle angle: shoulder(11), hip(23), knee(25)
+            display_angle(landmarks, 26, 28, 32, image, w, h, (0, 255, 255))
+
+            # Left ankle angle: shoulder(11), hip(23), knee(25)
+            display_angle(landmarks, 25, 27, 31, image, w, h, (0, 255, 255))
+
         # Dynamically get the window size
         try:
             _, _, win_w, win_h = cv2.getWindowImageRect('Mediapipe Feed')
