@@ -19,7 +19,7 @@ options = vision.PoseLandmarkerOptions(
 pose_landmarker = vision.PoseLandmarker.create_from_options(options)
 
 cap = cv2.VideoCapture(0)
-cv2.namedWindow('Mediapipe Feed', cv2.WINDOW_NORMAL)
+cv2.namedWindow('Movivo Squat Assessment', cv2.WINDOW_NORMAL)
 
 
 
@@ -54,7 +54,7 @@ try:
         except:
             image_resized = image
 
-        cv2.imshow('Mediapipe Feed', image_resized)
+        cv2.imshow('Movivo Squat Assessment', image_resized)
 
         if cv2.waitKey(10) & 0xFF == ord('q'):
             break
