@@ -4,8 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FMS Assessment - Movivo</title>
-    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
-    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <link
+            rel="stylesheet"
+            href="https://pyscript.net/releases/2026.3.1/core.css"
+    />
+    <script
+            type="module"
+            src="https://pyscript.net/releases/2026.3.1/core.js">
+    </script>
+    <py-config>
+        packages = ["opencv-python", "numpy"]
+    </py-config>
     <style>
         body {
             font-family: Arial, sans-serif;
