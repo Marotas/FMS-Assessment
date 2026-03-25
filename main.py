@@ -6,7 +6,7 @@ from pose_processor import initialize_pose_landmarker, process_frame
 # Initialize the pose landmarker
 pose_landmarker = initialize_pose_landmarker()
 
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(0)
 cv2.namedWindow('Movivo Squat Assessment', cv2.WINDOW_NORMAL)
 
 try:
@@ -16,7 +16,7 @@ try:
             break
 
         # Process frame with pose detection and drawing
-        image = process_frame(pose_landmarker, frame)
+        image, squat_count, max_angle = process_frame(pose_landmarker, frame)
 
         # Dynamically get the window size
         try:

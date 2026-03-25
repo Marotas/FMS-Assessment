@@ -14,6 +14,24 @@ def calculate_angle(a, b, c):
     angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
     return np.degrees(angle)
 
+def get_angle(landmarks, point1_idx, point2_idx, point3_idx, w, h):
+    """
+    Calculate angle from landmarks without displaying it.
+    
+    Args:
+        landmarks: The pose landmarks
+        point1_idx, point2_idx, point3_idx: Landmark indices for angle calculation
+        w, h: Image dimensions
+    
+    Returns:
+        The calculated angle in degrees
+    """
+    point1 = [landmarks[point1_idx].x * w, landmarks[point1_idx].y * h]
+    point2 = [landmarks[point2_idx].x * w, landmarks[point2_idx].y * h]
+    point3 = [landmarks[point3_idx].x * w, landmarks[point3_idx].y * h]
+    
+    return calculate_angle(point1, point2, point3)
+
 def display_angle(landmarks, point1_idx, point2_idx, point3_idx, image, w, h, color=(255, 255, 255)):
     """
     Calculate angle and display it on the image.
@@ -61,7 +79,7 @@ def calculate_ankle_angle(a, b, c):
     cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
     angle = np.arccos(np.clip(cosine_angle, -1.0, 1.0))
     # Subtract from 180 to make 0 degrees at straight position
-    return 180 - np.degrees(angle)
+    return 110 - np.degrees(angle)
 
 def display_ankle_angle(landmarks, knee_idx, ankle_idx, foot_idx, image, w, h, color=(255, 255, 255)):
     """

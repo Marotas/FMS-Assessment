@@ -3,34 +3,9 @@ import cv2
 import base64
 import js
 import asyncio
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
-import utils
+from pose_processor import initialize_pose_landmarker, process_frame
 
 # Initialize the pose landmarker
-def initialize_pose_landmarker():
-    base_options = python.BaseOptions(model_asset_path='pose_landmarker_full.task')
-    options = vision.PoseLandmarkerOptions(
-        base_options=base_options,
-        running_mode=vision.RunningMode.IMAGE,
-        min_pose_detection_confidence=0.5,
-        min_pose_presence_confidence=0.5
-    )
-    return vision.PoseLandmarker.create_from_options(options)
-
-def process_frame(pose_landmarker, frame):
-    """Process frame with pose detection and draw assessment data"""
-    frame = cv2.flip(frame, 1)
-    pose_results, image, h, w = utils.change_image_format(pose_landmarker, frame)
-    
-    if pose_results.pose_landmarks:
-        landmarks = utils.draw_skeleton_left_side(pose_results, image, h, w)
-        utils.display_angle(landmarks, 23, 25, 27, image, w, h, (0, 255, 255))
-        utils.display_angle(landmarks, 11, 23, 25, image, w, h, (0, 255, 255))
-        utils.display_ankle_angle(landmarks, 25, 27, 31, image, w, h, (0, 255, 255))
-    
-    return image
-
 pose_landmarker = initialize_pose_landmarker()
 
 async def run_video_feed():
@@ -52,7 +27,7 @@ async def run_video_feed():
                 break
             
             # Process frame with pose detection and drawing
-            image = process_frame(pose_landmarker, frame)
+            image, squat_count, max_angle = process_frame(pose_landmarker, frame)
             
             # Convert BGR to RGB for display
             frame_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -75,3 +50,4 @@ async def run_video_feed():
 
 # Start the video feed
 asyncio.create_task(run_video_feed())
+

@@ -11,7 +11,12 @@ from .calculations import (
     calculate_angle,
     display_angle,
     calculate_ankle_angle,
-    display_ankle_angle
+    display_ankle_angle,
+    get_angle,
+)
+
+from .assessment import (
+    SquatTracker
 )
 
 __all__ = [
@@ -22,5 +27,7 @@ __all__ = [
     'calculate_angle',
     'display_angle',
     'calculate_ankle_angle',
-    'display_ankle_angle'
+    'display_ankle_angle',
+    'get_angle',
+    'SquatTracker'
 ]

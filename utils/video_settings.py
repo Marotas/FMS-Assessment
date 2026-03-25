@@ -55,8 +55,6 @@ def draw_skeleton_right_side(pose_results, image, h, w):
     connections = [
         (12, 14), (14, 16),  # Right arm
         (24, 26), (26, 28),  # Right leg
-        (11, 12),            # Shoulders
-        (23, 24),            # Hips
         (12, 24)             # Right torso
     ]
     
@@ -86,8 +84,6 @@ def draw_skeleton_left_side(pose_results, image, h, w):
     connections = [
         (11, 13), (13, 15),  # Left arm
         (23, 25), (25, 27),  # Left leg
-        (11, 12),            # Shoulders
-        (23, 24),            # Hips
         (11, 23)             # Left torso
     ]
     
