@@ -1,20 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FMS Assessment - Movivo</title>
-    <link
-            rel="stylesheet"
-            href="https://pyscript.net/releases/2026.3.1/core.css"
-    />
-    <script
-            type="module"
-            src="https://pyscript.net/releases/2026.3.1/core.js">
-    </script>
-    <py-config>
-        packages = ["opencv-python", "numpy"]
-    </py-config>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,16 +12,19 @@
             padding: 20px;
             background-color: #f0f0f0;
         }
+
         h1 {
             text-align: center;
             color: #333;
         }
-        #videoFeed {
+
+        #videoContainer {
             display: flex;
             justify-content: center;
             align-items: center;
             margin: 20px 0;
         }
+
         #videoFrame {
             max-width: 100%;
             height: auto;
@@ -39,21 +32,133 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         #status {
             text-align: center;
             margin-top: 20px;
             color: #666;
             font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* Hidden video element used to capture feed */
+        #hiddenVideo {
+            display: none;
         }
     </style>
 </head>
+
 <body>
     <h1>FMS Assessment - Video Feed</h1>
-    <div id="videoFeed">
-        <img id="videoFrame" src="" alt="Video Feed" />
+    <div id="videoContainer">
+        <img id="videoFrame" alt="Video Feed Loading..." />
+        <video id="hiddenVideo" autoplay playsinline></video>
+        <canvas id="hiddenCanvas" style="display:none;"></canvas>
     </div>
-    <div id="status">Loading video feed...</div>
 
-    <py-script src="app.py"></py-script>
+    <div id="status">Connecting to server...</div>
+
+    <script>
+        const videoElement = document.getElementById('hiddenVideo');
+        const canvasElement = document.getElementById('hiddenCanvas');
+        const processedImage = document.getElementById('videoFrame');
+        const statusText = document.getElementById('status');
+
+        // Define connection objects
+        let ws;
+        let isStreaming = false;
+
+        async function initCamera() {
+            try {
+                // Request access to the webcam
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480 },
+                    audio: false
+                });
+
+                videoElement.srcObject = stream;
+                statusText.textContent = "Camera accessed, connecting to WebSocket...";
+                statusText.style.color = "blue";
+
+                // Once the video starts playing, we initialize the websocket
+                videoElement.addEventListener('play', () => {
+                    initWebSocket();
+                });
+            } catch (err) {
+                console.error("Error accessing the camera:", err);
+                statusText.textContent = "Error: Could not access camera. Please allow permissions.";
+                statusText.style.color = "red";
+            }
+        }
+
+        function initWebSocket() {
+            // Connect to FastAPI WebSocket endpoint
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+            ws.onopen = () => {
+                statusText.textContent = "Connected and streaming!";
+                statusText.style.color = "green";
+                isStreaming = true;
+
+                // Match canvas to video size
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+
+                // Start sending frames by sending the first one
+                sendFrame();
+            };
+
+            ws.onmessage = (event) => {
+                // Display the processed image string sent from backend
+                const data = event.data;
+                if (data.startsWith("data:image")) {
+                    processedImage.src = data;
+                } else if (!data.startsWith("error")) {
+                    statusText.textContent = event.data;
+                }
+
+                // CRITICAL FIX: Backpressure implementation
+                // Only request the next frame AFTER the server has responded with the previous one.
+                // This prevents massive queuing lag if the Python server is slower than 30 FPS.
+                if (isStreaming) {
+                    requestAnimationFrame(sendFrame);
+                }
+            };
+
+            ws.onerror = (err) => {
+                console.error("WebSocket Error:", err);
+                statusText.textContent = "WebSocket connection error.";
+                statusText.style.color = "red";
+                isStreaming = false;
+            };
+
+            ws.onclose = () => {
+                statusText.textContent = "Server disconnected. Please restart.";
+                statusText.style.color = "red";
+                isStreaming = false;
+            };
+        }
+
+        function sendFrame() {
+            if (!isStreaming || ws.readyState !== WebSocket.OPEN) {
+                return;
+            }
+
+            // Draw current video frame onto canvas
+            const ctx = canvasElement.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+            // Convert canvas to base64 jpeg string (compress for fast network transfer)
+            const imageData = canvasElement.toDataURL('image/jpeg', 0.5); // lowered quality slightly for speed
+
+            // Send base64 image data to the server
+            ws.send(imageData);
+        }
+
+        // Start initialization when the page loads
+        window.addEventListener('load', initCamera);
+    </script>
 </body>
+
 </html>
