@@ -5,50 +5,738 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FMS Assessment - Movivo</title>
+    
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f0f0;
-        }
+        /* ─── Design Tokens ───────────────────────────────────────── */
+:root {
+  --bg-primary:    #060a16;
+  --bg-secondary:  #0b1020;
+  --bg-card:       #101828;
+  --accent:        #00d4ff;
+  --accent-glow:   rgba(0, 212, 255, 0.18);
+  --accent-border: rgba(0, 212, 255, 0.28);
+  --score-3:       #00e676;
+  --score-2:       #ffab00;
+  --score-1:       #ff3d57;
+  --score-3-bg:    rgba(0, 230, 118, 0.12);
+  --score-2-bg:    rgba(255, 171, 0, 0.12);
+  --score-1-bg:    rgba(255, 61, 87, 0.12);
+  --text-primary:  #e2e8f8;
+  --text-secondary:#7a8cb0;
+  --text-muted:    #3a4a6a;
+  --border:        rgba(255, 255, 255, 0.055);
+  --panel-w:       390px;
+}
 
-        h1 {
-            text-align: center;
-            color: #333;
-        }
+/* ─── Reset ───────────────────────────────────────────────── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
 
-        #videoContainer {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 20px 0;
-        }
+/* ─── App Layout ──────────────────────────────────────────── */
+.app {
+  display: flex;
+  height: 100vh;
+}
 
-        #videoFrame {
-            max-width: 100%;
-            height: auto;
-            border: 2px solid #333;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+/* ─── Left Panel ──────────────────────────────────────────── */
+.panel {
+  width: var(--panel-w);
+  min-width: var(--panel-w);
+  height: 100vh;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
-        #status {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 16px;
-            font-weight: bold;
-        }
+/* Header */
+.panel-header {
+  padding: 22px 22px 18px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(160deg, rgba(0,212,255,0.07) 0%, transparent 70%);
+  flex-shrink: 0;
+}
+.brand {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 5px;
+}
+.logo-text {
+  font-size: 50px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--accent);
+}
+.logo-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--text-muted);
+}
+.exercise-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+.panel-subtitle {
+  font-size: 20px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+    text-align: center;
+  width: 100%;
+}
 
-        /* Hidden video element used to capture feed */
-        #hiddenVideo {
-            display: none;
-        }
+/* Scrollable content */
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.panel-content::-webkit-scrollbar { width: 4px; }
+.panel-content::-webkit-scrollbar-track { background: transparent; }
+.panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Section labels */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  padding: 10px 4px 6px;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.section-icon {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* Metric cards */
+.metric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 13px;
+  margin-bottom: 7px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.35s ease, background 0.35s ease;
+}
+.metric-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--text-muted);
+  transition: background 0.35s ease;
+}
+.metric-card.s3 { border-color: rgba(0,230,118,0.2); }
+.metric-card.s3::before { background: var(--score-3); }
+.metric-card.s2 { border-color: rgba(255,171,0,0.2); }
+.metric-card.s2::before { background: var(--score-2); }
+.metric-card.s1 { border-color: rgba(255,61,87,0.2); }
+.metric-card.s1::before { background: var(--score-1); }
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+.metric-name {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+/* Score badge */
+.score-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 20px;
+  letter-spacing: 0.4px;
+  transition: all 0.35s ease;
+  background: rgba(80,80,100,0.2);
+  color: var(--text-muted);
+}
+.score-badge.s3 { background: var(--score-3-bg); color: var(--score-3); }
+.score-badge.s2 { background: var(--score-2-bg); color: var(--score-2); }
+.score-badge.s1 { background: var(--score-1-bg); color: var(--score-1); }
+
+/* Values row */
+.metric-values {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+}
+.val-group { flex: 1; }
+.val-label {
+  font-size: 8.5px;
+  color: var(--text-muted);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  margin-bottom: 1px;
+}
+.val-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 21px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1;
+  transition: color 0.35s ease;
+}
+.val-number.s3 { color: var(--score-3); }
+.val-number.s2 { color: var(--score-2); }
+.val-number.s1 { color: var(--score-1); }
+.val-unit {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 1px;
+}
+
+/* Progress bar */
+.metric-bar {
+  margin-top: 9px;
+  height: 2px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.metric-bar-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 0.4s ease, background 0.35s ease;
+  background: var(--text-muted);
+  width: 0%;
+}
+
+/* ─── FMS Total Score ─────────────────────────────────────── */
+.fms-total {
+  margin: 10px 14px 12px;
+  background: linear-gradient(135deg, rgba(0,212,255,0.08) 0%, rgba(0,212,255,0.02) 100%);
+  border: 1px solid var(--accent-border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  text-align: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+.fms-total::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(0,212,255,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+.fms-total-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.fms-score-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 52px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent);
+  transition: color 0.35s ease;
+}
+.fms-score-value.s3 { color: var(--score-3); }
+.fms-score-value.s2 { color: var(--score-2); }
+.fms-score-value.s1 { color: var(--score-1); }
+.fms-score-denom {
+  font-size: 22px;
+  color: var(--text-muted);
+}
+.fms-score-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  min-height: 16px;
+  transition: color 0.35s ease;
+}
+
+/* Mini score matrix */
+.score-matrix {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 12px;
+}
+.matrix-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: background 0.35s ease;
+}
+.matrix-dot.s3 { background: var(--score-3); box-shadow: 0 0 4px var(--score-3); }
+.matrix-dot.s2 { background: var(--score-2); box-shadow: 0 0 4px var(--score-2); }
+.matrix-dot.s1 { background: var(--score-1); box-shadow: 0 0 4px var(--score-1); }
+
+/* ─── Status Bar ──────────────────────────────────────────── */
+.status-bar {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--score-1);
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+.status-dot.live {
+  background: var(--score-3);
+  box-shadow: 0 0 7px var(--score-3);
+  animation: blink 2.4s ease-in-out infinite;
+}
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+/* ─── Camera Area ─────────────────────────────────────────── */
+.camera-wrap {
+  flex: 1;
+  position: relative;
+  background: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#hiddenVideo  {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* mirror */
+  visibility: hidden;
+}
+#hiddenCanvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(-1); /* mirror to match video */
+}
+#videoContainer {
+  position: absolute;
+  inset: 0;
+}
+#videoFrame {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Corner guides */
+.guides {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.corner {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  border-color: var(--accent);
+  border-style: solid;
+  opacity: 0.35;
+}
+.corner.tl { top: 18px; left: 18px; border-width: 2px 0 0 2px; }
+.corner.tr { top: 18px; right: 18px; border-width: 2px 2px 0 0; }
+.corner.bl { bottom: 18px; left: 18px; border-width: 0 0 2px 2px; }
+.corner.br { bottom: 18px; right: 18px; border-width: 0 2px 2px 0; }
+.center-line {
+  position: absolute;
+  left: 50%;
+  top: 8%;
+  bottom: 8%;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(0,212,255,0.15), transparent);
+  transform: translateX(-50%);
+}
+
+/* Top bar overlay */
+.cam-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 16px 22px 40px;
+  background: linear-gradient(to bottom, rgba(6,10,22,0.85), transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.cam-title {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.3px;
+}
+.cam-title span { color: var(--accent); }
+.cam-clock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 30px;
+  color: var(--text-secondary);
+}
+
+/* Bottom bar overlay */
+.cam-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 40px 22px 16px;
+  background: linear-gradient(to top, rgba(6,10,22,0.9), transparent);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.phase-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.fps-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* No-camera placeholder */
+.cam-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+.cam-placeholder svg {
+  opacity: 0.25;
+}
+.cam-placeholder p {
+  font-size: 13px;
+}
+
+/* Skeleton angle labels drawn via canvas — styled only via JS */
+
+/* ─── Loading overlay ─────────────────────────────────────── */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 100;
+  transition: opacity 0.6s ease;
+}
+#loading-overlay.hidden { opacity: 0; pointer-events: none; }
+.loading-logo {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -1px;
+}
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
     </style>
 </head>
 
 <body>
+
+
+
+  <!-- ══════════════ LEFT PANEL ══════════════ -->
+  <div class="panel">
+
+    <div class="panel-header">
+      <div class="brand">
+        <div class="logo-text">movivo</div>
+      </div>
+      <div class="panel-subtitle">Echtzeit-Analyse</div>
+    </div>
+
+    <div class="panel-content">
+
+      <!-- ── Sagittalebene ── -->
+      <div class="section-label">
+        <span class="section-icon">↕</span>Sagittalebene
+      </div>
+
+      <!-- Knie-Flexion -->
+      <div class="metric-card" id="card-kf">
+        <div class="metric-header">
+          <span class="metric-name">Knie-Flexion</span>
+          <span class="score-badge" id="badge-kf">— / 3</span>
+        </div>
+        <div class="metric-values">
+          <div class="val-group">
+            <div class="val-label">Links</div>
+            <div class="val-number" id="kf-l">--<span class="val-unit">°</span></div>
+          </div>
+          <div class="val-group">
+            <div class="val-label">Rechts</div>
+            <div class="val-number" id="kf-r">--<span class="val-unit">°</span></div>
+          </div>
+        </div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="bar-kf"></div></div>
+      </div>
+
+      <!-- Hüft-Flexion -->
+      <div class="metric-card" id="card-hf">
+        <div class="metric-header">
+          <span class="metric-name">Hüft-Flexion</span>
+          <span class="score-badge" id="badge-hf">— / 3</span>
+        </div>
+        <div class="metric-values">
+          <div class="val-group">
+            <div class="val-label">Links</div>
+            <div class="val-number" id="hf-l">--<span class="val-unit">°</span></div>
+          </div>
+          <div class="val-group">
+            <div class="val-label">Rechts</div>
+            <div class="val-number" id="hf-r">--<span class="val-unit">°</span></div>
+          </div>
+        </div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="bar-hf"></div></div>
+      </div>
+
+      <!-- Sprunggelenk Dorsalflexion -->
+      <div class="metric-card" id="card-df">
+        <div class="metric-header">
+          <span class="metric-name">Sprunggelenk Dorsalflexion</span>
+          <span class="score-badge" id="badge-df">— / 3</span>
+        </div>
+        <div class="metric-values">
+          <div class="val-group">
+            <div class="val-label">Links</div>
+            <div class="val-number" id="df-l">--<span class="val-unit">°</span></div>
+          </div>
+          <div class="val-group">
+            <div class="val-label">Rechts</div>
+            <div class="val-number" id="df-r">--<span class="val-unit">°</span></div>
+          </div>
+        </div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="bar-df"></div></div>
+      </div>
+
+      <!-- Trunk-Vorneigung -->
+      <div class="metric-card" id="card-tv">
+        <div class="metric-header">
+          <span class="metric-name">Trunk-Vorneigung</span>
+          <span class="score-badge" id="badge-tv">— / 3</span>
+        </div>
+        <div class="metric-values">
+          <div class="val-group">
+            <div class="val-number" id="tv-val">--<span class="val-unit">°</span></div>
+          </div>
+        </div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="bar-tv"></div></div>
+      </div>
+
+      <!-- ── Frontalebene ── -->
+      <div class="section-label">
+        <span class="section-icon">↔</span>Frontalebene
+      </div>
+
+      <!-- Knie-Valgus -->
+      <div class="metric-card" id="card-kv">
+        <div class="metric-header">
+          <span class="metric-name">Knie-Valgus</span>
+          <span class="score-badge" id="badge-kv">— / 3</span>
+        </div>
+        <div class="metric-values">
+          <div class="val-group">
+            <div class="val-label">Links</div>
+            <div class="val-number" id="kv-l">--<span class="val-unit">°</span></div>
+          </div>
+          <div class="val-group">
+            <div class="val-label">Rechts</div>
+            <div class="val-number" id="kv-r">--<span class="val-unit">°</span></div>
+          </div>
+        </div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="bar-kv"></div></div>
+      </div>
+
+      <!-- L/R Asymmetrie -->
+      <div class="metric-card" id="card-as">
+        <div class="metric-header">
+          <span class="metric-name">L / R Asymmetrie Knie</span>
+          <span class="score-badge" id="badge-as">— / 3</span>
+        </div>
+        <div class="metric-values">
+          <div class="val-group">
+            <div class="val-number" id="as-val">--<span class="val-unit">°</span></div>
+          </div>
+        </div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="bar-as"></div></div>
+      </div>
+
+      <!-- Trunk-Seitneigung -->
+      <div class="metric-card" id="card-ts">
+        <div class="metric-header">
+          <span class="metric-name">Trunk-Seitneigung</span>
+          <span class="score-badge" id="badge-ts">— / 3</span>
+        </div>
+        <div class="metric-values">
+          <div class="val-group">
+            <div class="val-number" id="ts-val">--<span class="val-unit">°</span></div>
+          </div>
+        </div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="bar-ts"></div></div>
+      </div>
+
+      <!-- Fersenheben -->
+      <div class="metric-card" id="card-fh">
+        <div class="metric-header">
+          <span class="metric-name">Fersenheben</span>
+          <span class="score-badge" id="badge-fh">— / 3</span>
+        </div>
+        <div class="metric-values">
+          <div class="val-group">
+            <div class="val-label">Links</div>
+            <div class="val-number" id="fh-l">--</div>
+          </div>
+          <div class="val-group">
+            <div class="val-label">Rechts</div>
+            <div class="val-number" id="fh-r">--</div>
+          </div>
+        </div>
+        <div class="metric-bar"><div class="metric-bar-fill" id="bar-fh"></div></div>
+      </div>
+
+    </div><!-- /panel-content -->
+
+    <!-- FMS Total Score -->
+    <div class="fms-total">
+      <div class="fms-total-label">FMS Gesamtscore</div>
+      <div class="fms-score-value" id="fms-total">
+        --<span class="fms-score-denom"> / 3</span>
+      </div>
+      <div class="fms-score-desc" id="fms-desc">Warte auf Pose-Erkennung...</div>
+      <div class="score-matrix">
+        <div class="matrix-dot" id="dot-kf" title="Knie-Flexion"></div>
+        <div class="matrix-dot" id="dot-hf" title="Hüft-Flexion"></div>
+        <div class="matrix-dot" id="dot-df" title="Dorsalflexion"></div>
+        <div class="matrix-dot" id="dot-tv" title="Trunk-Vorneigung"></div>
+        <div class="matrix-dot" id="dot-kv" title="Knie-Valgus"></div>
+        <div class="matrix-dot" id="dot-as" title="Asymmetrie"></div>
+        <div class="matrix-dot" id="dot-ts" title="Trunk-Seitneigung"></div>
+        <div class="matrix-dot" id="dot-fh" title="Fersenheben"></div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot live" id="status-dot"></div>
+      <span id="status-text">Python · MediaPipe aktiv</span>
+    </div>
+  </div>
+
+  <!-- ══════════════ CAMERA AREA ══════════════ -->
+  <div class="camera-wrap">
+
+    <h1>FMS Assessment - Video Feed</h1>
+    <div id="videoContainer">
+        <img id="videoFrame" alt="Video Feed Loading..." />
+        <video id="hiddenVideo" autoplay playsinline></video>
+        <canvas id="hiddenCanvas" style="display:none;"></canvas>
+    </div>
+    <div id="status">Connecting to server...</div>
+ 
+    <!-- No-camera placeholder -->
+    <div class="cam-placeholder" id="cam-placeholder">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      <p>Kamera wird gestartet…</p>
+    </div>
+
+    <!-- UI overlays -->
+    <div class="guides">
+      <div class="corner tl"></div>
+      <div class="corner tr"></div>
+      <div class="corner bl"></div>
+      <div class="corner br"></div>
+      <div class="center-line"></div>
+    </div>
+
+    <div class="cam-top">
+      <div class="cam-title">Deep Squat <span>Assessment</span></div>
+      <div class="cam-clock" id="cam-clock"></div>
+    </div>
+
+    <div class="cam-bottom">
+      <div class="phase-label" id="phase-label">Initialisierung…</div>
+      <div class="fps-label" id="fps-label"></div>
+    </div>
+
+  </div>
+</div>
+
+
+
+<!--
     <h1>FMS Assessment - Video Feed</h1>
     <div id="videoContainer">
         <img id="videoFrame" alt="Video Feed Loading..." />
@@ -57,7 +745,7 @@
     </div>
 
     <div id="status">Connecting to server...</div>
-
+-->
     <script>
         const videoElement = document.getElementById('hiddenVideo');
         const canvasElement = document.getElementById('hiddenCanvas');
