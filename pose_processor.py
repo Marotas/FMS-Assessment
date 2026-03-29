@@ -52,16 +52,22 @@ def process_frame(pose_landmarker, frame):
     # Get tracker instance
     tracker = get_squat_tracker()
     
+    knee_angle_l = None
+    knee_angle_r = None
+
     # Draw pose landmarks and angles
     if pose_results.pose_landmarks:
         # Draw skeleton (left side)
         landmarks = utils.draw_skeleton_left_side(pose_results, image, h, w)
         
         # Get knee angle (hip(23), knee(25), ankle(27)) for squat tracking
-        knee_angle = utils.get_angle(landmarks, 23, 25, 27, w, h)
+        knee_angle_l = utils.get_angle(landmarks, 23, 25, 27, w, h)
+        
+        # Get right knee angle (hip(24), knee(26), ankle(28))
+        knee_angle_r = utils.get_angle(landmarks, 24, 26, 28, w, h)
         
         # Update squat tracker
-        tracker.update(knee_angle)
+        tracker.update(knee_angle_l)
         
         # Display all angles on image
         # Left leg angle: hip(23), knee(25), ankle(27)
@@ -87,5 +93,5 @@ def process_frame(pose_landmarker, frame):
                 (w - 250, 40),
                 cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 2, cv2.LINE_AA)
     
-    return image, squat_count, min_angle
+    return image, squat_count, min_angle, knee_angle_l, knee_angle_r
 

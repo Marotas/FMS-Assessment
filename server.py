@@ -1,4 +1,5 @@
 import asyncio
+import json
 import base64
 import cv2
 import numpy as np
@@ -43,14 +44,19 @@ async def websocket_endpoint(websocket: WebSocket):
                 if frame is not None:
                     # Process the frame using your existing logic
                     # This will draw the skeleton, angles, and update squat counts
-                    processed_img, squat_count, max_angle = process_frame(pose_landmarker, frame)
+                    processed_img, squat_count, max_angle, knee_angle_l, knee_angle_r = process_frame(pose_landmarker, frame)
                     
                     # Encode the processed image to send back to the browser
                     _, buffer = cv2.imencode('.jpg', processed_img, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
                     response_b64 = base64.b64encode(buffer).decode("utf-8")
                     
                     # Send the processed frame back to the client
-                    await websocket.send_text(f"data:image/jpeg;base64,{response_b64}")
+                    response_data = {
+                        "image": f"data:image/jpeg;base64,{response_b64}",
+                        "kf_l": round(knee_angle_l, 1) if knee_angle_l is not None else None,
+                        "kf_r": round(knee_angle_r, 1) if knee_angle_r is not None else None
+                    }
+                    await websocket.send_text(json.dumps(response_data))
                     
                     # Fire-and-forget: write to InfluxDB without blocking the stream
                     asyncio.create_task(write_squat_data(squat_count, max_angle))
