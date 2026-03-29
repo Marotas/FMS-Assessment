@@ -56,11 +56,12 @@ body {
 .brand {
   display: flex;
   align-items: baseline;
+  justify-content: center;
   gap: 10px;
   margin-bottom: 5px;
 }
 .logo-text {
-  font-size: 22px;
+  font-size: 50px;
   font-weight: 800;
   letter-spacing: -0.5px;
   color: var(--accent);
@@ -78,9 +79,11 @@ body {
   text-transform: uppercase;
 }
 .panel-subtitle {
-  font-size: 11px;
+  font-size: 20px;
   color: var(--text-muted);
   letter-spacing: 0.5px;
+    text-align: center;
+  width: 100%;
 }
 
 /* Scrollable content */
@@ -339,6 +342,7 @@ body {
   height: 100%;
   object-fit: cover;
   transform: scaleX(-1); /* mirror */
+  visibility: hidden;
 }
 #canvas {
   position: absolute;
@@ -387,7 +391,7 @@ body {
   pointer-events: none;
 }
 .cam-title {
-  font-size: 13px;
+  font-size: 30px;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: 0.3px;
@@ -395,7 +399,7 @@ body {
 .cam-title span { color: var(--accent); }
 .cam-clock {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 30px;
   color: var(--text-secondary);
 }
 
