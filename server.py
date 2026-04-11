@@ -6,12 +6,14 @@ import numpy as np
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pose_processor import initialize_pose_landmarker, process_frame
 from influx_writer import write_squat_data
 
 # I used fastAPI because of th websocket that allows the server to run HTML responses
 # https://fastapi.tiangolo.com/advanced/websockets/#in-production
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 pose_landmarker = initialize_pose_landmarker()
 
