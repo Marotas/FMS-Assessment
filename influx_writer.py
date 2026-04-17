@@ -12,15 +12,7 @@ INFLUX_ORG    = "movivo"
 INFLUX_BUCKET = "movivo"
 
 
-async def write_squat_data(squat_count: int, max_angle: float) -> None:
-    """
-    Write a single squat session data point to InfluxDB.
-    Designed to be called as a fire-and-forget asyncio task.
-
-    Args:
-        squat_count: Current cumulative squat count for the session
-        max_angle:   Deepest knee angle recorded so far (degrees)
-    """
+async def write_squat_data(squat_count: int, max_angle: float, patient_name: str, patient_id: str, session_id: str, video_url: str = "") -> None:
     try:
         async with InfluxDBClientAsync(
             url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG
@@ -28,10 +20,16 @@ async def write_squat_data(squat_count: int, max_angle: float) -> None:
             point = (
                 Point("squat_session")
                 .tag("source", "web_stream")
+                .tag("patient_name", patient_name)
+                .tag("patient_id", str(patient_id))
+                .tag("session_id", str(session_id))
                 .field("squat_count", int(squat_count))
                 .field("max_angle", float(max_angle))
+                .field("video_url", video_url)
             )
             write_api = client.write_api()
             await write_api.write(bucket=INFLUX_BUCKET, record=point)
     except Exception as e:
         print(f"[InfluxDB] write error: {e}")
+
+
