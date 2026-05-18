@@ -1,21 +1,21 @@
     /* ─── Design Tokens ───────────────────────────────────────── */
     :root {
-      --bg-primary: #060a16;
-      --bg-secondary: #0b1020;
-      --bg-card: #101828;
-      --accent: #00d4ff;
-      --accent-glow: rgba(0, 212, 255, 0.18);
-      --accent-border: rgba(0, 212, 255, 0.28);
-      --score-3: #00e676;
-      --score-2: #ffab00;
-      --score-1: #ff3d57;
-      --score-3-bg: rgba(0, 230, 118, 0.12);
-      --score-2-bg: rgba(255, 171, 0, 0.12);
-      --score-1-bg: rgba(255, 61, 87, 0.12);
-      --text-primary: #e2e8f8;
-      --text-secondary: #7a8cb0;
-      --text-muted: #3a4a6a;
-      --border: rgba(255, 255, 255, 0.055);
+      --bg-primary: #F5F0EB;
+      --bg-secondary: #FF6B5B;
+      --bg-card: #FFFFFF;
+      --accent: #FF9966;
+      --accent-glow: rgba(255, 153, 102, 0.18);
+      --accent-border: rgba(255, 153, 102, 0.28);
+      --score-3: #66BB6A;
+      --score-2: #FFA726;
+      --score-1: #EF5350;
+      --score-3-bg: rgba(102, 187, 106, 0.12);
+      --score-2-bg: rgba(255, 167, 38, 0.12);
+      --score-1-bg: rgba(239, 83, 80, 0.12);
+      --text-primary: #2C2C2C;
+      --text-secondary: #666666;
+      --text-muted: #999999;
+      --border: rgba(0, 0, 0, 0.08);
       --panel-w: 390px;
     }
 
@@ -62,7 +62,7 @@
     .panel-header {
       padding: 22px 22px 18px;
       border-bottom: 1px solid var(--border);
-      background: linear-gradient(160deg, rgba(0, 212, 255, 0.07) 0%, transparent 70%);
+      background: linear-gradient(160deg, rgba(255, 107, 91, 0.15) 0%, transparent 70%);
       flex-shrink: 0;
     }
 
@@ -78,7 +78,8 @@
       font-size: 50px;
       font-weight: 800;
       letter-spacing: -0.5px;
-      color: var(--accent);
+      color: #FFFFFF;
+      text-shadow: 0 2px 8px rgba(255, 107, 91, 0.3);
     }
 
     .logo-divider {
@@ -97,10 +98,11 @@
 
     .panel-subtitle {
       font-size: 20px;
-      color: var(--text-muted);
+      color: #FFFFFF;
       letter-spacing: 0.5px;
       text-align: center;
       width: 100%;
+      font-weight: 500;
     }
 
     /* Scrollable content */
@@ -130,7 +132,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 9px;
+      font-size: 12px;
       font-weight: 700;
       color: var(--text-muted);
       letter-spacing: 2.5px;
@@ -203,7 +205,7 @@
     }
 
     .metric-name {
-      font-size: 10.5px;
+      font-size: 20px;
       font-weight: 600;
       color: var(--text-secondary);
       letter-spacing: 0.4px;
@@ -212,7 +214,7 @@
 
     /* Score badge */
     .score-badge {
-      font-size: 9px;
+      font-size: 12px;
       font-weight: 700;
       padding: 2px 9px;
       border-radius: 20px;
@@ -249,9 +251,9 @@
     }
 
     .val-label {
-      font-size: 8.5px;
+      font-size: 20px;
       color: var(--text-muted);
-      letter-spacing: 1.2px;
+      letter-spacing: 2px;
       text-transform: uppercase;
       margin-bottom: 1px;
     }
@@ -286,7 +288,7 @@
 
     /* Progress bar */
     .metric-bar {
-      margin-top: 9px;
+      margin-top: 12px;
       height: 2px;
       background: rgba(255, 255, 255, 0.05);
       border-radius: 1px;
@@ -304,8 +306,8 @@
     /* ─── FMS Total Score ─────────────────────────────────────── */
     .fms-total {
       margin: 10px 14px 12px;
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(0, 212, 255, 0.02) 100%);
-      border: 1px solid var(--accent-border);
+      background: linear-gradient(135deg, rgba(255, 153, 102, 0.15) 0%, rgba(255, 153, 102, 0.05) 100%);
+      border: 1.5px solid var(--accent-border);
       border-radius: 14px;
       padding: 18px 20px;
       text-align: center;
@@ -322,14 +324,14 @@
       transform: translateX(-50%);
       width: 120px;
       height: 120px;
-      background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(255, 153, 102, 0.12) 0%, transparent 70%);
       pointer-events: none;
     }
 
     .fms-total-label {
-      font-size: 9px;
+      font-size: 13px;
       font-weight: 700;
-      color: var(--text-secondary);
+      color: #020202;
       letter-spacing: 2.5px;
       text-transform: uppercase;
       margin-bottom: 6px;
