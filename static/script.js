@@ -7,6 +7,13 @@ const statusText = document.getElementById('status');
 let ws;
 let isStreaming = false;
 
+const fmsContainer = document.getElementById('fms-total-container');
+const voiceContainer = document.getElementById('voice-assistant-container');
+const voiceStatus = document.getElementById('voice-status');
+const voiceCountdown = document.getElementById('voice-countdown');
+
+let isNewPatient = false;
+
 // --- Voice Assistant Implementation ---
 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
 recognition.continuous = true;
@@ -14,13 +21,7 @@ recognition.interimResults = false;
 recognition.lang = 'de-DE';
 
 let voiceState = 'IDLE'; // IDLE -> ASKING_IS_NEW -> ASKING_NAME -> CONFIRMING_START -> COUNTDOWN -> RECORDING
-let patientName = '';
-let isNewPatient = false;
 
-const fmsContainer = document.getElementById('fms-total-container');
-const voiceContainer = document.getElementById('voice-assistant-container');
-const voiceStatus = document.getElementById('voice-status');
-const voiceCountdown = document.getElementById('voice-countdown');
 
 function updateVoiceUI(statusText, showCountdown = false) {
   // Hide the FMS score dynamically and show voice assistant
@@ -88,6 +89,8 @@ recognition.onresult = async function (event) {
       ws.send(JSON.stringify({
         command: 'start_recording',
         name: patientName,
+        patient_id: patientId,
+        view_mode: urlViewMode,
         is_new_patient: isNewPatient
       }));
     }
@@ -162,28 +165,43 @@ function initWebSocket() {
   ws.onmessage = (event) => {
     // Display the processed image and UI metric updates sent from backend
     const data = event.data;
+
     if (data.startsWith("{")) {
       try {
         const parsed = JSON.parse(data);
+        
+        if (parsed.action === "ui_update") {
+          voiceState = parsed.state;
+          updateVoiceUI(parsed.message);
+          return;
+        }
+
         if (parsed.image) processedImage.src = parsed.image;
 
-        // Update left knee angle UI
-        if (parsed.kf_l !== null) {
-          const el = document.getElementById('kf-l');
-          if (el) el.innerHTML = `${parsed.kf_l}<span class="val-unit">°</span>`;
-        } else {
-          const el = document.getElementById('kf-l');
-          if (el) el.innerHTML = `--<span class="val-unit">°</span>`;
-        }
+        // Helper function to update UI values safely
+        const updateVal = (id, val, isPercent = false) => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (val !== undefined && val !== null) {
+            el.innerHTML = `${Math.round(val)}<span class="val-unit">${isPercent ? '%' : '°'}</span>`;
+          } else {
+            el.innerHTML = `--<span class="val-unit">${isPercent ? '%' : '°'}</span>`;
+          }
+        };
 
-        // Update right knee angle UI
-        if (parsed.kf_r !== null) {
-          const el = document.getElementById('kf-r');
-          if (el) el.innerHTML = `${parsed.kf_r}<span class="val-unit">°</span>`;
-        } else {
-          const el = document.getElementById('kf-r');
-          if (el) el.innerHTML = `--<span class="val-unit">°</span>`;
-        }
+        // Sagittal and Frontal shared
+        updateVal('kf-l', parsed.kf_l);
+        updateVal('kf-r', parsed.kf_r);
+        
+        // Sagittal specifics
+        updateVal('hf-l', parsed.hf_l);
+        updateVal('df-l', parsed.df_l);
+        updateVal('tv-val', parsed.tv_val);
+        updateVal('fh-l', parsed.fh_l, true); // Heel lift percent
+
+        // Frontal specifics
+        updateVal('as-val', parsed.as_val, true); // Symmetry percent
+        updateVal('ts-val', parsed.ts_val, true); // Centering percent
 
       } catch (e) {
         console.error("Error parsing websocket message", e);
@@ -218,17 +236,29 @@ function initWebSocket() {
   };
 }
 
-function sendFrame() {
+let lastFrameTime = 0;
+const TARGET_FPS = 15; // Cap at 15 frames per second
+const FRAME_INTERVAL = 1000 / TARGET_FPS;
+
+function sendFrame(timestamp) {
   if (!isStreaming || ws.readyState !== WebSocket.OPEN) {
     return;
   }
+
+  // Throttle the framerate to reduce network load
+  if (!timestamp) timestamp = performance.now();
+  if (timestamp - lastFrameTime < FRAME_INTERVAL) {
+    requestAnimationFrame(sendFrame);
+    return;
+  }
+  lastFrameTime = timestamp;
 
   // Draw current video frame onto canvas
   const ctx = canvasElement.getContext('2d');
   ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
 
-  // Convert canvas to base64 jpeg string
-  const imageData = canvasElement.toDataURL('image/jpeg', 0.5);
+  // Convert canvas to base64 jpeg string (lowered quality to 0.4 for remote server)
+  const imageData = canvasElement.toDataURL('image/jpeg', 0.4);
 
   // Send base64 image data to the server
   ws.send(imageData);

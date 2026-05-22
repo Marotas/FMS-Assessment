@@ -35,7 +35,8 @@ select_view_mode()
 # Initialize the pose landmarker
 pose_landmarker = initialize_pose_landmarker()
 
-cap = cv2.VideoCapture(0)
+#Camera INDEX
+# cap = cv2.VideoCapture(0)
 cv2.namedWindow('Movivo Squat Assessment', cv2.WINDOW_NORMAL)
 
 try:

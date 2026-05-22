@@ -11,11 +11,12 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from influx_writer import write_squat_data
+from pydantic import BaseModel
 from pose_processor import (
-    initialize_pose_landmarker, process_frame
+    initialize_pose_landmarker, process_frame, set_view_mode, get_view_mode,
+    get_last_sagittal_metrics, get_last_frontal_metrics, reset_all_trackers
 )
-from influx_writer import write_squat_data
+from influx_writer import write_sagittal_frame, write_frontal_frame, write_session_summary
 
 # I used fastAPI because of th websocket that allows the server to run HTML responses
 # https://fastapi.tiangolo.com/advanced/websockets/#in-production
@@ -34,6 +35,14 @@ os.makedirs("videos", exist_ok=True)
 app.mount("/videos", StaticFiles(directory="videos"), name="videos")
 
 pose_landmarker = initialize_pose_landmarker()
+
+active_sessions = {}
+connected_clients = []
+
+class StartRecordingRequest(BaseModel):
+    patient_id: str
+    patient_name: str
+    view_mode: str
 
 @app.get("/")
 async def get():
@@ -66,8 +75,14 @@ class AssessmentSession:
             if cmd == "start_recording":
                 self.is_recording = True
                 self.patient_name = cmd_data.get("name", "Unknown")
-                self.session_id = str(uuid.uuid4())
-                self.patient_id = str(uuid.uuid5(uuid.NAMESPACE_OID, self.patient_name))
+                self.session_id = cmd_data.get("session_id", str(uuid.uuid4()))
+                self.patient_id = cmd_data.get("patient_id", str(uuid.uuid5(uuid.NAMESPACE_OID, self.patient_name)))
+                
+                view_mode = cmd_data.get("view_mode", "sagittal")
+                set_view_mode(view_mode)
+                reset_all_trackers()
+                
+                active_sessions[self.patient_id] = self
 
                 # Sanitize filename (replace spaces with underscores)
                 safe_name = self.patient_name.replace(" ", "_")
@@ -80,27 +95,35 @@ class AssessmentSession:
                 print(f"Predetermined Video URL: {self.video_url}")
 
             elif cmd == "stop_recording":
-                self.is_recording = False
-                if self.video_writer:
-                    self.video_writer.release()
-                    self.video_writer = None
-
-                    # PERSIST TO INFLUXDB ONLY AT THE END OF SESSION
-                    # We ensure the video is fully closed before saving the URL to the DB
-                    print(f"Finalizing session data for InfluxDB...")
-                    asyncio.create_task(write_squat_data(
-                        self.latest_squat_count,
-                        self.latest_max_angle,
-                        self.patient_name,
-                        self.patient_id,
-                        self.session_id,
-                        self.video_url
-                    ))
-
+                self.finalize_session()
                 print(f"Stopped recording for {self.patient_name}")
 
         except Exception as e:
             print(f"Error parsing command: {e}")
+
+    def finalize_session(self):
+        """Finalizes the recording session, saves video and influxDB summary."""
+        if self.video_writer:
+            self.video_writer.release()
+            self.video_writer = None
+
+        if self.is_recording:
+            print(f"Finalizing session data for {self.patient_name}...")
+            fms_score = 2 if self.latest_squat_count > 0 else 0
+            view_mode = get_view_mode()
+            asyncio.create_task(write_session_summary(
+                self.latest_squat_count,
+                self.latest_max_angle,
+                fms_score,
+                self.patient_name,
+                self.patient_id,
+                self.session_id,
+                self.video_url,
+                view_mode
+            ))
+            self.is_recording = False
+            if self.patient_id in active_sessions:
+                del active_sessions[self.patient_id]
 
     async def process_frame(self, data: str):
         """Decodes, processes, encodes, and records a single image frame."""
@@ -117,26 +140,82 @@ class AssessmentSession:
                 await self.websocket.send_text("error: invalid frame decoding")
                 return
 
-            # Pose Processing
-            processed_img, squat_count, max_angle, knee_angle_l, knee_angle_r = process_frame(pose_landmarker, frame)
+            # Pose Processing (returns 3 values now)
+            processed_img, squat_count, max_angle = process_frame(pose_landmarker, frame)
 
             # Encode response
             _, buffer = cv2.imencode('.jpg', processed_img, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
             response_b64 = base64.b64encode(buffer).decode("utf-8")
 
-            response_data = {
+            # Fetch metrics and build JSON payload
+            view_mode = get_view_mode()
+            payload = {
                 "image": f"data:image/jpeg;base64,{response_b64}",
-                "kf_l": round(knee_angle_l, 1) if knee_angle_l is not None else None,
-                "kf_r": round(knee_angle_r, 1) if knee_angle_r is not None else None
+                "view_mode": view_mode
             }
-            await self.websocket.send_text(json.dumps(response_data))
+
+            if view_mode == "sagittal":
+                metrics = get_last_sagittal_metrics()
+                if metrics:
+                    payload.update({
+                        "kf_l": metrics.get('knee_angle'),
+                        "hf_l": metrics.get('hip_angle'),
+                        "df_l": metrics.get('ankle_angle'),
+                        "tv_val": metrics.get('trunk_lean_angle'),
+                        "fh_l": metrics.get('heel_lift_percent')
+                    })
+            elif view_mode == "frontal":
+                metrics = get_last_frontal_metrics()
+                if metrics:
+                    payload.update({
+                        "kf_l": metrics.get('left_knee_angle'),
+                        "kf_r": metrics.get('right_knee_angle'),
+                        "as_val": metrics.get('knee_symmetry'),
+                        "ts_val": metrics.get('trunk_centering')
+                    })
+
+            await self.websocket.send_text(json.dumps(payload))
 
             # Save to video and InfluxDB
-            # Save to class variables and video storage
             if self.is_recording:
                 self.latest_squat_count = squat_count
                 self.latest_max_angle = max_angle
                 self._record_to_storage(processed_img, squat_count, max_angle)
+
+                # Fire-and-forget: write detailed metrics to InfluxDB based on view mode
+                view_mode = get_view_mode()
+
+                if view_mode == "sagittal":
+                    metrics = get_last_sagittal_metrics()
+                    if metrics:
+                        asyncio.create_task(write_sagittal_frame(
+                            rep_number=metrics['rep_number'],
+                            frame_number=metrics['frame_number'],
+                            knee_angle=metrics['knee_angle'],
+                            trunk_lean_angle=metrics['trunk_lean_angle'],
+                            ankle_angle=metrics['ankle_angle'],
+                            hip_angle=metrics['hip_angle'],
+                            heel_lift_percent=metrics['heel_lift_percent'],
+                            patient_name=self.patient_name,
+                            patient_id=self.patient_id,
+                            session_id=self.session_id
+                        ))
+                elif view_mode == "frontal":
+                    metrics = get_last_frontal_metrics()
+                    if metrics:
+                        asyncio.create_task(write_frontal_frame(
+                            rep_number=metrics['rep_number'],
+                            frame_number=metrics['frame_number'],
+                            left_knee_angle=metrics['left_knee_angle'],
+                            right_knee_angle=metrics['right_knee_angle'],
+                            knee_symmetry=metrics['knee_symmetry'],
+                            trunk_centering=metrics['trunk_centering'],
+                            left_alignment=metrics['left_alignment'],
+                            right_alignment=metrics['right_alignment'],
+                            patient_name=self.patient_name,
+                            patient_id=self.patient_id,
+                            session_id=self.session_id
+                        ))
 
         except Exception as e:
             print(f"Error processing frame: {e}")
@@ -164,96 +243,74 @@ class AssessmentSession:
 
     def cleanup(self):
         """Ensures resources are released."""
-        if self.video_writer:
-            self.video_writer.release()
+        self.finalize_session()
 
+
+@app.post("/api/start_recording")
+async def api_start_recording(req: StartRecordingRequest):
+    if not connected_clients:
+        return {"status": "error", "message": "No FMS client connected"}
+    
+    session = connected_clients[-1] # use the most recently connected client
+    
+    cmd_data = {
+        "command": "start_recording",
+        "name": req.patient_name,
+        "patient_id": req.patient_id,
+        "view_mode": req.view_mode
+    }
+    
+    # Process it directly
+    await session.handle_command(json.dumps(cmd_data))
+    
+    # Update UI on the FMS client
+    try:
+        await session.websocket.send_text(json.dumps({
+            "action": "ui_update",
+            "state": "RECORDING",
+            "message": f"Aufnahme läuft für {req.patient_name}... ({req.view_mode})"
+        }))
+    except:
+        pass
+
+    return {"status": "started"}
+
+@app.post("/api/stop_recording/{patient_id}")
+async def stop_recording_api(patient_id: str):
+    if patient_id in active_sessions:
+        session = active_sessions[patient_id]
+        session.finalize_session()
+        # Notify the websocket client to update its UI
+        try:
+            asyncio.create_task(session.websocket.send_text(json.dumps({
+                "action": "ui_update",
+                "state": "IDLE",
+                "message": "Aufnahme beendet. Warte auf nächste Sitzung..."
+            })))
+        except:
+            pass
+        return {"status": "stopped"}
+    return {"status": "not_found"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    session = AssessmentSession(websocket)
+    connected_clients.append(session)
     try:
         while True:
-            # Receive frame as base64 string from the client browser
             data = await websocket.receive_text()
-            
-            # The client sends the image via Data URL format
-            if data.startswith("data:image"):
-                base64_data = data.split(",")[1]
+            if data.startswith("{"):
+                await session.handle_command(data)
             else:
-                base64_data = data
-                
-            try:
-                # Decode base64 back into an OpenCV image
-                img_data = base64.b64decode(base64_data)
-                nparr = np.frombuffer(img_data, np.uint8)
-                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                
-                if frame is not None:
-                    # Process the frame using your existing logic
-                    # This will draw the skeleton, angles, and update squat counts
-                    processed_img, squat_count, max_angle = process_frame(pose_landmarker, frame)
-                    
-                    # Encode the processed image to send back to the browser
-                    _, buffer = cv2.imencode('.jpg', processed_img, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
-                    response_b64 = base64.b64encode(buffer).decode("utf-8")
-                    
-                    # Send the processed frame back to the client
-                    await websocket.send_text(f"data:image/jpeg;base64,{response_b64}")
-                    
-                    # Fire-and-forget: write detailed metrics to InfluxDB based on view mode
-                    view_mode = get_view_mode()
-
-                    if view_mode == "sagittal":
-                        metrics = get_last_sagittal_metrics()
-                        if metrics:
-                            asyncio.create_task(write_sagittal_frame(
-                                rep_number=metrics['rep_number'],
-                                frame_number=metrics['frame_number'],
-                                knee_angle=metrics['knee_angle'],
-                                trunk_lean_angle=metrics['trunk_lean_angle'],
-                                ankle_angle=metrics['ankle_angle'],
-                                hip_angle=metrics['hip_angle'],
-                                heel_lift_percent=metrics['heel_lift_percent']
-                            ))
-                    elif view_mode == "frontal":
-                        metrics = get_last_frontal_metrics()
-                        if metrics:
-                            asyncio.create_task(write_frontal_frame(
-                                rep_number=metrics['rep_number'],
-                                frame_number=metrics['frame_number'],
-                                left_knee_angle=metrics['left_knee_angle'],
-                                right_knee_angle=metrics['right_knee_angle'],
-                                knee_symmetry=metrics['knee_symmetry'],
-                                trunk_centering=metrics['trunk_centering'],
-                                left_alignment=metrics['left_alignment'],
-                                right_alignment=metrics['right_alignment']
-                            ))
-
-                    # Also write legacy session data for backward compatibility
-                    asyncio.create_task(write_squat_data(squat_count, max_angle))
-                else:
-                    await websocket.send_text("error: invalid frame decoding")
-            except Exception as cv_e:
-                print(f"Error processing frame: {cv_e}")
-
-               # await websocket.accept()
-            # session = AssessmentSession(websocket)
-
-            # try:
-            # while True:
-            #     data = await websocket.receive_text()
-
-            #   if data.startswith("{"):
-            ##       await session.handle_command(data)
-            #  else:
-            #      await session.process_frame(data)
-
+                await session.process_frame(data)
     except WebSocketDisconnect:
         print("Client disconnected")
+        if session in connected_clients:
+            connected_clients.remove(session)
+        session.cleanup()
     except Exception as e:
         print(f"WebSocket error: {e}")
-    finally:
-        session.cleanup()
 
 
 if __name__ == "__main__":
