@@ -4,6 +4,7 @@ Used by both desktop (main.py) and web (app.py) interfaces
 Supports both sagittal (side view) and frontal (front view) assessment
 """
 import cv2
+import os
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import utils
@@ -26,7 +27,11 @@ last_frontal_metrics = None
 
 def initialize_pose_landmarker():
     """Initialize and return the pose landmarker"""
-    base_options = python.BaseOptions(model_asset_path='pose_landmarker_full.task')
+    # Use POSE_MODEL env var: 'lite' for faster inference on weaker hardware, 'full' for accuracy
+    model_variant = os.environ.get('POSE_MODEL', 'full')
+    model_path = f'pose_landmarker_{model_variant}.task'
+    print(f"Loading pose model: {model_path}")
+    base_options = python.BaseOptions(model_asset_path=model_path)
     options = vision.PoseLandmarkerOptions(
         base_options=base_options,
         running_mode=vision.RunningMode.IMAGE,

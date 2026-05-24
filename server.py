@@ -144,7 +144,7 @@ class AssessmentSession:
             processed_img, squat_count, max_angle = process_frame(pose_landmarker, frame)
 
             # Encode response
-            _, buffer = cv2.imencode('.jpg', processed_img, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+            _, buffer = cv2.imencode('.jpg', processed_img, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
             response_b64 = base64.b64encode(buffer).decode("utf-8")
 
             # Fetch metrics and build JSON payload

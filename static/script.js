@@ -257,8 +257,8 @@ function sendFrame(timestamp) {
   const ctx = canvasElement.getContext('2d');
   ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
 
-  // Convert canvas to base64 jpeg string (lowered quality to 0.4 for remote server)
-  const imageData = canvasElement.toDataURL('image/jpeg', 0.4);
+  // Convert canvas to base64 jpeg string (0.65 balances quality vs bandwidth)
+  const imageData = canvasElement.toDataURL('image/jpeg', 0.65);
 
   // Send base64 image data to the server
   ws.send(imageData);
