@@ -115,11 +115,16 @@ recognition.onerror = function (event) {
 try { recognition.start(); } catch (e) { console.warn(e); }
 
 // --- WebSocket & Camera Implementation ---
+// Resolution via URL param: ?res=720 for HD, ?res=480 for speed (default)
+const urlParams = new URLSearchParams(window.location.search);
+const RES = urlParams.get('res') === '720' ? { w: 1280, h: 720 } : { w: 640, h: 480 };
+console.log(`Camera resolution: ${RES.w}x${RES.h}`);
+
 async function initCamera() {
   try {
     // Request access to the webcam
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 1280, height: 720 },
+      video: { width: RES.w, height: RES.h },
       audio: false
     });
 
