@@ -227,8 +227,10 @@ class AssessmentSession:
             h, w = img.shape[:2]
 
             # Try codecs in order of preference
+            # MJPG is always available (built into OpenCV, no external libs needed)
             codecs = [
                 ('VP80', '.webm'),
+                ('MJPG', '.avi'),
                 ('mp4v', '.mp4'),
                 ('XVID', '.avi'),
             ]
