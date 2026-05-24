@@ -144,7 +144,7 @@ class AssessmentSession:
             processed_img, squat_count, max_angle = process_frame(pose_landmarker, frame)
 
             # Encode response
-            _, buffer = cv2.imencode('.jpg', processed_img, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+            _, buffer = cv2.imencode('.jpg', processed_img, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
             response_b64 = base64.b64encode(buffer).decode("utf-8")
 
             # Fetch metrics and build JSON payload
@@ -225,19 +225,36 @@ class AssessmentSession:
         if self.video_writer is None:
             os.makedirs("videos", exist_ok=True)
             h, w = img.shape[:2]
-            filepath = os.path.join("videos", self.video_filename)
 
-            # Switched to WebM/VP8 for browser compatibility on Linux
-            print(f"Opening VideoWriter with 'VP80' (WebM) codec...")
-            fourcc = cv2.VideoWriter_fourcc(*'VP80')
-            self.video_writer = cv2.VideoWriter(filepath, fourcc, 30.0, (w, h))
+            # Try codecs in order of preference
+            codecs = [
+                ('VP80', '.webm'),
+                ('mp4v', '.mp4'),
+                ('XVID', '.avi'),
+            ]
 
-            if not self.video_writer.isOpened():
-                print(f"CRITICAL: Failed to initialize VideoWriter with 'VP80' for {filepath}")
-                self.video_writer = None
+            for codec, ext in codecs:
+                base_name = os.path.splitext(self.video_filename)[0]
+                test_filename = f"{base_name}{ext}"
+                filepath = os.path.join("videos", test_filename)
+
+                print(f"Trying VideoWriter with '{codec}' codec...")
+                fourcc = cv2.VideoWriter_fourcc(*codec)
+                writer = cv2.VideoWriter(filepath, fourcc, 30.0, (w, h))
+
+                if writer.isOpened():
+                    self.video_writer = writer
+                    self.video_filename = test_filename
+                    self.video_url = test_filename
+                    print(f"VideoWriter initialized with '{codec}' -> {test_filename}")
+                    break
+                else:
+                    writer.release()
+                    print(f"Codec '{codec}' not available, trying next...")
+
+            if self.video_writer is None:
+                print(f"CRITICAL: No working video codec found!")
                 return
-            else:
-                print(f"VideoWriter successfully initialized.")
 
         self.video_writer.write(img)
 

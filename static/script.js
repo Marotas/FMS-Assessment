@@ -119,7 +119,7 @@ async function initCamera() {
   try {
     // Request access to the webcam
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { width: 640, height: 480 },
+      video: { width: 1280, height: 720 },
       audio: false
     });
 
@@ -237,7 +237,7 @@ function initWebSocket() {
 }
 
 let lastFrameTime = 0;
-const TARGET_FPS = 15; // Cap at 15 frames per second
+const TARGET_FPS = 24; // Higher FPS since browser & server are on same machine
 const FRAME_INTERVAL = 1000 / TARGET_FPS;
 
 function sendFrame(timestamp) {
@@ -257,8 +257,8 @@ function sendFrame(timestamp) {
   const ctx = canvasElement.getContext('2d');
   ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
 
-  // Convert canvas to base64 jpeg string (0.65 balances quality vs bandwidth)
-  const imageData = canvasElement.toDataURL('image/jpeg', 0.65);
+  // High quality since browser & server are on the same machine (no network overhead)
+  const imageData = canvasElement.toDataURL('image/jpeg', 0.85);
 
   // Send base64 image data to the server
   ws.send(imageData);
