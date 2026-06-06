@@ -47,3 +47,105 @@ def draw_skeleton(pose_results, image, h, w):
         y = int(landmark.y * h)
         cv2.circle(image, (x, y), 5, (0, 0, 255), -1)
     return landmarks
+
+def draw_skeleton_right_side(pose_results, image, h, w):
+    landmarks = pose_results.pose_landmarks[0]
+    
+    # Draw skeleton connections - Right side only
+    connections = [
+        (12, 14), (14, 16),  # Right arm
+        (24, 26), (26, 28),  # Right leg
+        (12, 24)             # Right torso
+    ]
+    
+    for start, end in connections:
+        start_pos = landmarks[start]
+        end_pos = landmarks[end]
+        
+        start_coords = (int(start_pos.x * w), int(start_pos.y * h))
+        end_coords = (int(end_pos.x * w), int(end_pos.y * h))
+        
+        cv2.line(image, start_coords, end_coords, (0, 255, 0), 2)
+    
+    # Draw landmarks as circles - Right side only
+    right_landmarks = [12, 14, 16, 24, 26, 28]
+    for i in right_landmarks:
+        landmark = landmarks[i]
+        x = int(landmark.x * w)
+        y = int(landmark.y * h)
+        cv2.circle(image, (x, y), 5, (0, 0, 255), -1)
+    
+    return landmarks
+
+def draw_skeleton_left_side(pose_results, image, h, w):
+    landmarks = pose_results.pose_landmarks[0]
+    
+    # Draw skeleton connections - Left side only
+    connections = [
+        (11, 13), (13, 15),  # Left arm
+        (23, 25), (25, 27),  # Left leg
+        (11, 23)             # Left torso
+    ]
+    
+    for start, end in connections:
+        start_pos = landmarks[start]
+        end_pos = landmarks[end]
+        
+        start_coords = (int(start_pos.x * w), int(start_pos.y * h))
+        end_coords = (int(end_pos.x * w), int(end_pos.y * h))
+        
+        cv2.line(image, start_coords, end_coords, (0, 255, 0), 2)
+    
+    # Draw landmarks as circles - Left side only
+    left_landmarks = [11, 13, 15, 23, 25, 27]
+    for i in left_landmarks:
+        landmark = landmarks[i]
+        x = int(landmark.x * w)
+        y = int(landmark.y * h)
+        cv2.circle(image, (x, y), 5, (0, 0, 255), -1)
+    
+    return landmarks
+
+def draw_skeleton_frontal(pose_results, image, h, w):
+    """
+    Draw frontal view skeleton (front-facing squat analysis).
+    Excludes face and arm landmarks, shows both legs and torso.
+    
+    Args:
+        pose_results: MediaPipe pose detection results
+        image: Image to draw on
+        h, w: Image height and width
+    
+    Returns:
+        Landmarks object
+    """
+    landmarks = pose_results.pose_landmarks[0]
+    
+    # Draw skeleton connections - Frontal view (no arms, no face)
+    connections = [
+        (11, 12),            # Shoulders
+        (11, 23), (12, 24),  # Torso (shoulders to hips)
+        (23, 24),            # Hips
+        (23, 25), (24, 26),  # Thighs
+        (25, 27), (26, 28),  # Shins
+        (27, 29), (28, 30)   # Feet (ankle to heel)
+    ]
+    
+    for start, end in connections:
+        start_pos = landmarks[start]
+        end_pos = landmarks[end]
+        
+        start_coords = (int(start_pos.x * w), int(start_pos.y * h))
+        end_coords = (int(end_pos.x * w), int(end_pos.y * h))
+        
+        cv2.line(image, start_coords, end_coords, (0, 255, 0), 2)
+    
+    # Draw landmarks as circles - Frontal view only (both sides, no arms/face)
+    frontal_landmarks = [11, 12, 23, 24, 25, 26, 27, 28, 29, 30]
+    for i in frontal_landmarks:
+        landmark = landmarks[i]
+        x = int(landmark.x * w)
+        y = int(landmark.y * h)
+        cv2.circle(image, (x, y), 5, (0, 0, 255), -1)
+    
+    return landmarks

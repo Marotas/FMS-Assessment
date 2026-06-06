@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+  <title>FMS Assessment - Movivo</title>
+  <link rel="stylesheet" href="/static/styles.css?v=2">
+</head>
+
+<body>
+  <div class="app">
+
+    <!-- ══════════════ LEFT PANEL ══════════════ -->
+    <div class="panel">
+
+      <div class="panel-header">
+        <div class="brand">
+          <div class="logo-text">movivo</div>
+        </div>
+        <div class="panel-subtitle">Echtzeit-Analyse</div>
+      </div>
+
+      <div class="panel-content">
+
+        <!-- ── Sagittalebene ── -->
+        <div class="section-label">
+          <span class="section-icon">↕</span>Sagittalebene
+        </div>
+
+        <!-- Knie-Flexion -->
+        <div class="metric-card" id="card-kf">
+          <div class="metric-header">
+            <span class="metric-name">Knie-Flexion</span>
+          </div>
+          <div class="metric-values">
+            <div class="val-group">
+              <div class="val-label">Links</div>
+              <div class="val-number" id="kf-l">--<span class="val-unit">°</span></div>
+            </div>
+            <div class="val-group">
+              <div class="val-label">Rechts</div>
+              <div class="val-number" id="kf-r">--<span class="val-unit">°</span></div>
+            </div>
+          </div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" id="bar-kf"></div>
+          </div>
+        </div>
+
+        <!-- Hüft-Flexion -->
+        <div class="metric-card" id="card-hf">
+          <div class="metric-header">
+            <span class="metric-name">Hüft-Flexion</span>
+          </div>
+          <div class="metric-values">
+            <div class="val-group">
+              <div class="val-label">Links</div>
+              <div class="val-number" id="hf-l">--<span class="val-unit">°</span></div>
+            </div>
+            <div class="val-group">
+              <div class="val-label">Rechts</div>
+              <div class="val-number" id="hf-r">--<span class="val-unit">°</span></div>
+            </div>
+          </div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" id="bar-hf"></div>
+          </div>
+        </div>
+
+        <!-- Sprunggelenk Dorsalflexion -->
+        <div class="metric-card" id="card-df">
+          <div class="metric-header">
+            <span class="metric-name">Sprunggelenk Dorsalflexion</span>
+          </div>
+          <div class="metric-values">
+            <div class="val-group">
+              <div class="val-label">Links</div>
+              <div class="val-number" id="df-l">--<span class="val-unit">°</span></div>
+            </div>
+            <div class="val-group">
+              <div class="val-label">Rechts</div>
+              <div class="val-number" id="df-r">--<span class="val-unit">°</span></div>
+            </div>
+          </div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" id="bar-df"></div>
+          </div>
+        </div>
+
+        <!-- Trunk-Vorneigung -->
+        <div class="metric-card" id="card-tv">
+          <div class="metric-header">
+            <span class="metric-name">Trunk-Vorneigung</span>
+          </div>
+          <div class="metric-values">
+            <div class="val-group">
+              <div class="val-number" id="tv-val">--<span class="val-unit">°</span></div>
+            </div>
+          </div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" id="bar-tv"></div>
+          </div>
+        </div>
+
+        <!-- ── Frontalebene ── -->
+        <div class="section-label">
+          <span class="section-icon">↔</span>Frontalebene
+        </div>
+
+        <!-- Knie-Valgus -->
+        <div class="metric-card" id="card-kv">
+          <div class="metric-header">
+            <span class="metric-name">Knie-Valgus</span>
+          </div>
+          <div class="metric-values">
+            <div class="val-group">
+              <div class="val-label">Links</div>
+              <div class="val-number" id="kv-l">--<span class="val-unit">°</span></div>
+            </div>
+            <div class="val-group">
+              <div class="val-label">Rechts</div>
+              <div class="val-number" id="kv-r">--<span class="val-unit">°</span></div>
+            </div>
+          </div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" id="bar-kv"></div>
+          </div>
+        </div>
+
+        <!-- L/R Asymmetrie -->
+        <div class="metric-card" id="card-as">
+          <div class="metric-header">
+            <span class="metric-name">L / R Asymmetrie Knie</span>
+          </div>
+          <div class="metric-values">
+            <div class="val-group">
+              <div class="val-number" id="as-val">--<span class="val-unit">°</span></div>
+            </div>
+          </div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" id="bar-as"></div>
+          </div>
+        </div>
+
+        <!-- Trunk-Seitneigung -->
+        <div class="metric-card" id="card-ts">
+          <div class="metric-header">
+            <span class="metric-name">Trunk-Seitneigung</span>
+          </div>
+          <div class="metric-values">
+            <div class="val-group">
+              <div class="val-number" id="ts-val">--<span class="val-unit">°</span></div>
+            </div>
+          </div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" id="bar-ts"></div>
+          </div>
+        </div>
+
+        <!-- Fersenheben -->
+        <div class="metric-card" id="card-fh">
+          <div class="metric-header">
+            <span class="metric-name">Fersenheben</span>
+          </div>
+          <div class="metric-values">
+            <div class="val-group">
+              <div class="val-label">Links</div>
+              <div class="val-number" id="fh-l">--</div>
+            </div>
+            <div class="val-group">
+              <div class="val-label">Rechts</div>
+              <div class="val-number" id="fh-r">--</div>
+            </div>
+          </div>
+          <div class="metric-bar">
+            <div class="metric-bar-fill" id="bar-fh"></div>
+          </div>
+        </div>
+
+      </div><!-- /panel-content -->
+
+      <!-- FMS Total Score -->
+      <div class="fms-total" id="fms-total-container">
+        <div class="fms-total-label">FMS Gesamtscore</div>
+        <div class="fms-score-value" id="fms-total">
+          --<span class="fms-score-denom"> / 3</span>
+        </div>
+        <div class="fms-score-desc" id="fms-desc">Warte auf Pose-Erkennung...</div>
+        <div class="score-matrix">
+          <div class="matrix-dot" id="dot-kf" title="Knie-Flexion"></div>
+          <div class="matrix-dot" id="dot-hf" title="Hüft-Flexion"></div>
+          <div class="matrix-dot" id="dot-df" title="Dorsalflexion"></div>
+          <div class="matrix-dot" id="dot-tv" title="Trunk-Vorneigung"></div>
+          <div class="matrix-dot" id="dot-kv" title="Knie-Valgus"></div>
+          <div class="matrix-dot" id="dot-as" title="Asymmetrie"></div>
+          <div class="matrix-dot" id="dot-ts" title="Trunk-Seitneigung"></div>
+          <div class="matrix-dot" id="dot-fh" title="Fersenheben"></div>
+        </div>
+      </div>
+
+      <!-- Voice Assistant UI -->
+      <div class="voice-assistant" id="voice-assistant-container">
+        <div class="voice-assistant-title">🎤 Sprachassistent</div>
+        <div class="voice-status" id="voice-status">Warte auf "Sitzung starten"...</div>
+        <div class="voice-countdown" id="voice-countdown">3</div>
+      </div>
+
+      <div class="status-bar">
+        <div class="status-dot live" id="status-dot"></div>
+        <span id="status-text">Python · MediaPipe aktiv</span>
+      </div>
+    </div>
+
+    <!-- ══════════════ CAMERA AREA ══════════════ -->
+    <div class="camera-wrap">
+
+      <h1>FMS Assessment - Video Feed</h1>
+      <div
+        style="display: flex; flex-direction: column; justify-content: center; align-items: center; width: 100%; gap: 10px; flex: 1;">
+        <img id="videoFrame" alt="Video Feed Loading..." />
+        <video id="hiddenVideo" autoplay playsinline></video>
+        <canvas id="hiddenCanvas"></canvas>
+      </div>
+      <div id="status">Connecting to server...</div>
+
+      <!-- UI overlays -->
+      <div class="guides">
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+        <div class="center-line"></div>
+      </div>
+
+      <div class="cam-top">
+        <div class="cam-title">Deep Squat <span>Assessment</span></div>
+        <div class="cam-clock" id="cam-clock"></div>
+      </div>
+
+      <div class="cam-bottom">
+        <div class="phase-label" id="phase-label">Initialisierung…</div>
+        <div class="fps-label" id="fps-label"></div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <script src="/static/script.js"></script>
+</body>
+
+</html>
