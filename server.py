@@ -140,11 +140,17 @@ class AssessmentSession:
                 await self.websocket.send_text("error: invalid frame decoding")
                 return
 
+            # Resize frame to speed up processing and lower bandwidth (Max Width: 640)
+            h, w = frame.shape[:2]
+            if w > 640:
+                ratio = 640 / float(w)
+                frame = cv2.resize(frame, (640, int(h * ratio)))
+
             # Pose Processing (returns 3 values now)
             processed_img, squat_count, max_angle = process_frame(pose_landmarker, frame)
 
-            # Encode response
-            _, buffer = cv2.imencode('.jpg', processed_img, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+            # Encode response (Lowered JPEG quality from 90 to 65 to reduce payload)
+            _, buffer = cv2.imencode('.jpg', processed_img, [int(cv2.IMWRITE_JPEG_QUALITY), 65])
             response_b64 = base64.b64encode(buffer).decode("utf-8")
 
             # Fetch metrics and build JSON payload

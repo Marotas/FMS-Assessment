@@ -28,7 +28,7 @@ last_frontal_metrics = None
 def initialize_pose_landmarker():
     """Initialize and return the pose landmarker"""
     # Use POSE_MODEL env var: 'lite' for faster inference on weaker hardware, 'full' for accuracy
-    model_variant = os.environ.get('POSE_MODEL', 'full')
+    model_variant = os.environ.get('POSE_MODEL', 'lite')
     model_path = f'pose_landmarker_{model_variant}.task'
     print(f"Loading pose model: {model_path}")
     base_options = python.BaseOptions(model_asset_path=model_path)
